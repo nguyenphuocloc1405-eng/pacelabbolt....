@@ -6,13 +6,49 @@ export function formatPace(secPerKm: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
+export function parseDurationToSeconds(input: string): number {
+  const trimmed = input.trim();
+  if (!trimmed) return 0;
+  const parts = trimmed.split(/[:.]/).map((p) => parseInt(p, 10));
+  if (parts.some((p) => isNaN(p))) return 0;
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  if (parts.length === 1) {
+    return parts[0] * 60;
+  }
+  return 0;
+}
+
 export function formatDuration(min: number, lang: Lang = 'vi'): string {
-  if (min < 60) return `${min}${lang === 'vi' ? 'p' : 'm'}`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
+  const totalSec = Math.round(min * 60);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
   const hLabel = lang === 'vi' ? 'g' : 'h';
   const mLabel = lang === 'vi' ? 'p' : 'm';
-  return `${h}${hLabel} ${m}${mLabel}`;
+  const sLabel = lang === 'vi' ? 's' : 's';
+  if (h > 0) {
+    return `${h}${hLabel} ${m.toString().padStart(2, '0')}${mLabel} ${s.toString().padStart(2, '0')}${sLabel}`;
+  }
+  if (m > 0) {
+    return `${m}${mLabel} ${s.toString().padStart(2, '0')}${sLabel}`;
+  }
+  return `${s}${sLabel}`;
+}
+
+export function formatDurationClock(min: number): string {
+  const totalSec = Math.round(min * 60);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export function formatDate(dateStr: string, lang: Lang = 'vi'): string {

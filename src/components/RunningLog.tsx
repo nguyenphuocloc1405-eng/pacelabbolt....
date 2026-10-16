@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, MapPin, Timer, TrendingUp, Calendar, X, Activity, Download, Footprints, Tag, Map as MapIcon, Upload, Mountain } from 'lucide-react';
 import type { Run, RunInput, Shoe, WorkoutType, GPXResult } from '@/types';
-import { calcCalories, formatDate, formatDuration, formatPace } from '@/lib/format';
+import { calcCalories, formatDate, formatDuration, formatDurationClock, formatPace, parseDurationToSeconds } from '@/lib/format';
 import { useLanguage } from '@/lib/i18n';
 import RunMap from '@/components/RunMap';
 import GPXUploader from '@/components/GPXUploader';
@@ -269,7 +269,8 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
           <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
             <Timer className="mx-auto mb-1 h-4 w-4 text-blue-400" />
             <p className="text-xs text-neutral-500">{t('log.time')}</p>
-            <p className="text-sm font-semibold text-white">{formatDuration(run.duration_min, lang)}</p>
+            <p className="text-sm font-semibold text-white">{formatDurationClock(run.duration_min)}</p>
+            <p className="text-[10px] text-neutral-500">{formatDuration(run.duration_min, lang)}</p>
           </div>
           <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
             <Activity className="mx-auto mb-1 h-4 w-4 text-orange-400" />
@@ -321,8 +322,9 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
     const [workoutType, setWorkoutType] = useState<WorkoutType | ''>('');
 
     const dist = parseFloat(distance) || 0;
-    const dur = parseInt(duration) || 0;
-    const autoPace = dist > 0 && dur > 0 ? Math.round((dur * 60) / dist) : 0;
+    const durSec = parseDurationToSeconds(duration);
+    const dur = durSec / 60;
+    const autoPace = dist > 0 && durSec > 0 ? Math.round(durSec / dist) : 0;
 
     async function handleSubmit(e: React.FormEvent) {
       e.preventDefault();
@@ -402,14 +404,18 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
               </Field>
               <Field label={t('log.duration')} icon={<Timer className="h-4 w-4" />}>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  placeholder="30"
+                  placeholder="45:30 hoặc 1:04:25"
                   className="form-input"
                   required
                 />
+                {durSec > 0 && (
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {formatDurationClock(dur)} · {formatDuration(dur, lang)}
+                  </p>
+                )}
               </Field>
             </div>
 

@@ -145,7 +145,7 @@ export async function fetchLeaderboard(period: 'week' | 'month'): Promise<Leader
   const entries: { id: string; name: string; km: number; runs: number }[] = [];
   snap.docs.forEach((d: QueryDocumentSnapshot) => {
     const data = d.data();
-    const runs = (data.runs as Array<{ date: string; distance_km: number }>[]) ?? [];
+    const runs = (data.runs as Array<{ date: string; distance_km: number }>) ?? [];
     const periodRuns = runs.filter((r) => r.date >= periodStartStr);
     const totalKm = periodRuns.reduce((sum, r) => sum + r.distance_km, 0);
     if (totalKm > 0) {

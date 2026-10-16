@@ -35,6 +35,8 @@ function AppInner() {
     { id: 'nutrition', label: t('nav.nutrition'), icon: Apple },
     { id: 'pace', label: t('nav.paceCalc'), icon: Calculator },
     { id: 'shoes', label: t('nav.shoes'), icon: ShoeIcon },
+    { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy },
+    { id: 'hr', label: t('nav.hrZones'), icon: HeartPulse },
   ];
 
   const fetchRuns = useCallback(async () => {
@@ -140,6 +142,8 @@ function AppInner() {
             {activeTab === 'shoes' && (
               <ShoeTracker shoes={shoes} runs={runs} onAddShoe={handleAddShoe} onDeleteShoe={handleDeleteShoe} />
             )}
+            {activeTab === 'leaderboard' && <Leaderboard runs={runs} />}
+            {activeTab === 'hr' && <HeartRateZones />}
           </>
         )}
       </main>

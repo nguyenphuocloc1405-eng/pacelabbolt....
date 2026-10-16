@@ -278,6 +278,7 @@ const ui: Record<Lang, Record<string, string>> = {
     'map.selectRun': 'Chọn buổi chạy để xem tuyến đường',
     'map.savedRoute': 'Tuyến đường đã lưu',
   },
+  en: {
     'app.tagline': 'Run. Train. Fuel.',
     'nav.dashboard': 'Dashboard',
     'nav.log': 'Log',

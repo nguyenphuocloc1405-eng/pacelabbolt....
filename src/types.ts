@@ -95,3 +95,43 @@ export interface ShoeInput {
   brand: string;
   max_km: number;
 }
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  totalKm: number;
+  runCount: number;
+}
+
+export type BadgeId =
+  | 'first_10k'
+  | 'streak_5'
+  | 'streak_10'
+  | 'early_bird'
+  | 'night_owl'
+  | 'century_club'
+  | 'first_run'
+  | 'half_marathon'
+  | 'weekly_warrior'
+  | 'month_master';
+
+export interface BadgeDef {
+  id: BadgeId;
+  icon: string;
+  name_en: string;
+  name_vi: string;
+  desc_en: string;
+  desc_vi: string;
+  color: string;
+}
+
+export interface HRZone {
+  zone: number;
+  name_en: string;
+  name_vi: string;
+  desc_en: string;
+  desc_vi: string;
+  minPct: number;
+  maxPct: number;
+  color: string;
+}

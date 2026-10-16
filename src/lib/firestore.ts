@@ -11,7 +11,7 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Run, RunInput, GoalDistance, Shoe, ShoeInput, WorkoutType } from '@/types';
+import type { Run, RunInput, GoalDistance, Shoe, ShoeInput, WorkoutType, LeaderboardEntry } from '@/types';
 
 const RUNS = 'runs';
 const EXERCISE_COMPLETIONS = 'exercise_completions';
@@ -124,4 +124,58 @@ export async function fetchWeeklyGoal(): Promise<number> {
 
 export async function saveWeeklyGoal(km: number): Promise<void> {
   await setDoc(doc(db, WEEKLY_GOAL, 'current'), { km });
+}
+
+// ---- Leaderboard ----
+
+const LEADERBOARD = 'leaderboard';
+const USER_PROFILE = 'user_profile';
+
+export async function fetchLeaderboard(period: 'week' | 'month'): Promise<LeaderboardEntry[]> {
+  const snap = await getDocs(collection(db, LEADERBOARD));
+  const now = new Date();
+  const periodStart = new Date(now);
+  if (period === 'week') {
+    periodStart.setDate(periodStart.getDate() - 7);
+  } else {
+    periodStart.setDate(periodStart.getDate() - 30);
+  }
+  const periodStartStr = periodStart.toISOString().split('T')[0];
+
+  const entries: { id: string; name: string; km: number; runs: number }[] = [];
+  snap.docs.forEach((d: QueryDocumentSnapshot) => {
+    const data = d.data();
+    const runs = (data.runs as Array<{ date: string; distance_km: number }>[]) ?? [];
+    const periodRuns = runs.filter((r) => r.date >= periodStartStr);
+    const totalKm = periodRuns.reduce((sum, r) => sum + r.distance_km, 0);
+    if (totalKm > 0) {
+      entries.push({
+        id: d.id,
+        name: (data.name as string) ?? 'Runner',
+        km: totalKm,
+        runs: periodRuns.length,
+      });
+    }
+  });
+  entries.sort((a, b) => b.km - a.km);
+  return entries.map((e) => ({
+    id: e.id,
+    name: e.name,
+    totalKm: e.km,
+    runCount: e.runs,
+  }));
+}
+
+export async function fetchUserProfile(): Promise<{ name: string; avatar: string }> {
+  const snap = await getDocs(collection(db, USER_PROFILE));
+  const existing = snap.docs.find((d: QueryDocumentSnapshot) => d.id === 'me');
+  if (!existing) return { name: 'You', avatar: '🏃' };
+  return {
+    name: (existing.data().name as string) ?? 'You',
+    avatar: (existing.data().avatar as string) ?? '🏃',
+  };
+}
+
+export async function saveUserProfile(name: string, avatar: string): Promise<void> {
+  await setDoc(doc(db, USER_PROFILE, 'me'), { name, avatar });
 }

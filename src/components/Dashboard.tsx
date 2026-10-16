@@ -8,8 +8,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Activity, Flame, MapPin, Timer, TrendingUp, Target, Pencil, Check } from 'lucide-react';
+import { Activity, Flame, MapPin, Timer, TrendingUp, Target, Pencil, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
 import type { Run } from '@/types';
+import type { Lang } from '@/lib/i18n';
 import { calcCalories, formatDate, formatDuration, formatPace } from '@/lib/format';
 import { useLanguage } from '@/lib/i18n';
 import { fetchWeeklyGoal, saveWeeklyGoal } from '@/lib/firestore';
@@ -205,6 +206,9 @@ export default function Dashboard({ runs, onNavigate }: DashboardProps) {
           <p className="text-sm text-neutral-500">{t('dash.noGoal')}</p>
         )}
       </div>
+
+      {/* Overload Warning */}
+      <OverloadWarning runs={runs} lang={lang} t={t} />
 
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
         <div className="mb-4 flex items-center justify-between">
@@ -405,6 +409,89 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between">
       <span className="text-sm text-neutral-400">{label}</span>
       <span className="font-semibold text-white">{value}</span>
+    </div>
+  );
+}
+
+function OverloadWarning({ runs, lang, t }: { runs: Run[]; lang: Lang; t: (key: string, ...args: unknown[]) => string }) {
+  const { thisWeekKm, lastWeekKm, pct } = useMemo(() => {
+    const now = new Date();
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(now.getDate() - now.getDay());
+    thisWeekStart.setHours(0, 0, 0, 0);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+    const thisWeekStr = thisWeekStart.toISOString().split('T')[0];
+    const lastWeekStr = lastWeekStart.toISOString().split('T')[0];
+
+    const thisWeekKm = runs
+      .filter((r) => r.date >= thisWeekStr)
+      .reduce((sum, r) => sum + r.distance_km, 0);
+    const lastWeekKm = runs
+      .filter((r) => r.date >= lastWeekStr && r.date < thisWeekStr)
+      .reduce((sum, r) => sum + r.distance_km, 0);
+
+    const pct = lastWeekKm > 0 ? Math.round(((thisWeekKm - lastWeekKm) / lastWeekKm) * 100) : 0;
+    return { thisWeekKm, lastWeekKm, pct };
+  }, [runs]);
+
+  if (thisWeekKm === 0 && lastWeekKm === 0) return null;
+
+  const isOverload = pct > 15 && lastWeekKm > 0;
+
+  return (
+    <div
+      className={`rounded-2xl border p-5 backdrop-blur transition-all ${
+        isOverload
+          ? 'border-red-500/30 bg-red-500/5'
+          : 'border-green-500/30 bg-green-500/5'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
+            isOverload
+              ? 'bg-red-500/10 text-red-400'
+              : 'bg-green-500/10 text-green-400'
+          }`}
+        >
+          {isOverload ? <AlertTriangle className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
+        </div>
+        <div className="flex-1">
+          <h3 className={`font-semibold ${isOverload ? 'text-red-400' : 'text-green-400'}`}>
+            {isOverload ? t('overload.title') : t('overload.safe')}
+          </h3>
+          {isOverload && (
+            <p className="mt-1 text-sm text-neutral-300">
+              {t('overload.increase').replace('{pct}', pct.toString())}
+            </p>
+          )}
+          {isOverload && (
+            <p className="mt-2 text-sm text-neutral-400">{t('overload.advice')}</p>
+          )}
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+              <p className="text-xs text-neutral-500">{t('overload.lastWeek')}</p>
+              <p className="mt-0.5 font-bold text-white">{lastWeekKm.toFixed(1)} km</p>
+            </div>
+            <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+              <p className="text-xs text-neutral-500">{t('overload.thisWeek')}</p>
+              <p className="mt-0.5 font-bold text-white">{thisWeekKm.toFixed(1)} km</p>
+            </div>
+            <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+              <p className="text-xs text-neutral-500">{t('overload.change')}</p>
+              <p
+                className={`mt-0.5 font-bold ${
+                  pct > 15 ? 'text-red-400' : pct < 0 ? 'text-blue-400' : 'text-green-400'
+                }`}
+              >
+                {pct > 0 ? '+' : ''}{pct}%
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

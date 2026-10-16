@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
-import { LayoutDashboard, Footprints, Dumbbell, Apple, Globe, Calculator, Footprints as ShoeIcon } from 'lucide-react';
+import { LayoutDashboard, Footprints, Dumbbell, Apple, Globe, Calculator, Footprints as ShoeIcon, Trophy, HeartPulse } from 'lucide-react';
 import Dashboard from '@/components/Dashboard';
 import RunningLog from '@/components/RunningLog';
 import TrainingPlan from '@/components/TrainingPlan';
 import Nutrition from '@/components/Nutrition';
 import PaceCalculator from '@/components/PaceCalculator';
 import ShoeTracker from '@/components/ShoeTracker';
+import Leaderboard from '@/components/Leaderboard';
+import HeartRateZones from '@/components/HeartRateZones';
 import {
   fetchRuns as fbFetchRuns,
   addRun as fbAddRun,
@@ -17,7 +19,7 @@ import {
 import { LanguageProvider, useLanguage, type Lang } from '@/lib/i18n';
 import type { Run, RunInput, Shoe, ShoeInput } from '@/types';
 
-type Tab = 'dashboard' | 'log' | 'training' | 'nutrition' | 'pace' | 'shoes';
+type Tab = 'dashboard' | 'log' | 'training' | 'nutrition' | 'pace' | 'shoes' | 'leaderboard' | 'hr';
 
 function AppInner() {
   const { lang, toggleLang, t } = useLanguage();

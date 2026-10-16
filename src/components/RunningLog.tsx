@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Plus, Trash2, MapPin, Timer, TrendingUp, Calendar, X, Activity, Download, Footprints, Tag } from 'lucide-react';
+import { Plus, Trash2, MapPin, Timer, TrendingUp, Calendar, X, Activity, Download, Footprints, Tag, Map as MapIcon } from 'lucide-react';
 import type { Run, RunInput, Shoe, WorkoutType } from '@/types';
 import { calcCalories, formatDate, formatDuration, formatPace } from '@/lib/format';
 import { useLanguage } from '@/lib/i18n';
+import RunMap from '@/components/RunMap';
 
 const WORKOUT_TYPES: WorkoutType[] = ['Easy', 'Tempo', 'Interval', 'Long Run', 'Fartlek', 'Hill Repeats'];
 
@@ -25,8 +26,10 @@ interface RunningLogProps {
 export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: RunningLogProps) {
   const { lang, t, td } = useLanguage();
   const [showForm, setShowForm] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
 
   const sortedRuns = [...runs].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -89,13 +92,26 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
         </div>
         <div className="flex items-center gap-2">
           {sortedRuns.length > 0 && (
-            <button
-              onClick={handleExportCsv}
-              className="flex items-center gap-2 rounded-xl border border-neutral-700 px-4 py-2.5 font-medium text-neutral-300 transition-colors hover:bg-neutral-800"
-            >
-              <Download className="h-5 w-5" />
-              <span className="hidden sm:inline">{t('log.exportCsv')}</span>
-            </button>
+            <>
+              <button
+                onClick={() => setShowMap((v) => !v)}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-medium transition-colors ${
+                  showMap
+                    ? 'border-orange-500/50 bg-orange-500/10 text-orange-400'
+                    : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                <MapIcon className="h-5 w-5" />
+                <span className="hidden sm:inline">{showMap ? t('map.hideMap') : t('map.viewMap')}</span>
+              </button>
+              <button
+                onClick={handleExportCsv}
+                className="flex items-center gap-2 rounded-xl border border-neutral-700 px-4 py-2.5 font-medium text-neutral-300 transition-colors hover:bg-neutral-800"
+              >
+                <Download className="h-5 w-5" />
+                <span className="hidden sm:inline">{t('log.exportCsv')}</span>
+              </button>
+            </>
           )}
           <button
             onClick={() => setShowForm(true)}
@@ -110,6 +126,20 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
+        </div>
+      )}
+
+      {showMap && (
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
+          <div className="mb-3 flex items-center gap-2">
+            <MapIcon className="h-5 w-5 text-orange-400" />
+            <h3 className="text-lg font-semibold text-white">{t('map.title')}</h3>
+          </div>
+          <RunMap
+            routePoints={routePoints}
+            onPointsChange={setRoutePoints}
+            interactive
+          />
         </div>
       )}
 

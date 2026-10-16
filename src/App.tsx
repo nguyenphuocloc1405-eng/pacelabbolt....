@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { LayoutDashboard, Footprints, Dumbbell, Apple, Globe, Calculator, Footprints as ShoeIcon, Trophy, HeartPulse } from 'lucide-react';
+import { LayoutDashboard, Footprints, Dumbbell, Apple, Globe, Calculator, Footprints as ShoeIcon, Trophy, HeartPulse, Award } from 'lucide-react';
 import Dashboard from '@/components/Dashboard';
 import RunningLog from '@/components/RunningLog';
 import TrainingPlan from '@/components/TrainingPlan';
@@ -8,6 +8,7 @@ import PaceCalculator from '@/components/PaceCalculator';
 import ShoeTracker from '@/components/ShoeTracker';
 import Leaderboard from '@/components/Leaderboard';
 import HeartRateZones from '@/components/HeartRateZones';
+import LifetimeStats from '@/components/LifetimeStats';
 import {
   fetchRuns as fbFetchRuns,
   addRun as fbAddRun,
@@ -19,7 +20,7 @@ import {
 import { LanguageProvider, useLanguage, type Lang } from '@/lib/i18n';
 import type { Run, RunInput, Shoe, ShoeInput } from '@/types';
 
-type Tab = 'dashboard' | 'log' | 'training' | 'nutrition' | 'pace' | 'shoes' | 'leaderboard' | 'hr';
+type Tab = 'dashboard' | 'log' | 'training' | 'nutrition' | 'pace' | 'shoes' | 'leaderboard' | 'hr' | 'lifetime';
 
 function AppInner() {
   const { lang, toggleLang, t } = useLanguage();
@@ -37,6 +38,7 @@ function AppInner() {
     { id: 'shoes', label: t('nav.shoes'), icon: ShoeIcon },
     { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy },
     { id: 'hr', label: t('nav.hrZones'), icon: HeartPulse },
+    { id: 'lifetime', label: t('nav.lifetime'), icon: Award },
   ];
 
   const fetchRuns = useCallback(async () => {
@@ -144,6 +146,7 @@ function AppInner() {
             )}
             {activeTab === 'leaderboard' && <Leaderboard runs={runs} />}
             {activeTab === 'hr' && <HeartRateZones />}
+            {activeTab === 'lifetime' && <LifetimeStats runs={runs} />}
           </>
         )}
       </main>

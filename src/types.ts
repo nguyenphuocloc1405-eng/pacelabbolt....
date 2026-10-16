@@ -113,7 +113,14 @@ export type BadgeId =
   | 'first_run'
   | 'half_marathon'
   | 'weekly_warrior'
-  | 'month_master';
+  | 'month_master'
+  | 'streak_3'
+  | 'streak_7'
+  | 'streak_14'
+  | 'streak_30'
+  | 'sub25_5k'
+  | 'finisher_10k'
+  | 'early_bird_6am';
 
 export interface BadgeDef {
   id: BadgeId;
@@ -133,5 +140,30 @@ export interface HRZone {
   desc_vi: string;
   minPct: number;
   maxPct: number;
+  color: string;
+}
+
+export interface GPXPoint {
+  lat: number;
+  lon: number;
+  ele: number | null;
+  time: string | null;
+}
+
+export interface GPXResult {
+  points: [number, number][];
+  distanceKm: number;
+  durationMin: number;
+  elevationGain: number;
+  avgPaceSecPerKm: number;
+}
+
+export interface RunnerLevel {
+  level: number;
+  title_en: string;
+  title_vi: string;
+  totalKm: number;
+  progressPct: number;
+  kmToNext: number;
   color: string;
 }

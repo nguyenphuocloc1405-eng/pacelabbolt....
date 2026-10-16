@@ -1,13 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Trophy, Medal, Crown, Footprints, Edit2, Check, X } from 'lucide-react';
+import { Trophy, Medal, Crown, Footprints, Edit2, Check, X, Star } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { fetchLeaderboard, fetchUserProfile, saveUserProfile } from '@/lib/firestore';
-import { BADGE_DEFS, getUnlockedBadges } from '@/lib/badges';
+import { BADGE_DEFS, getUnlockedBadges, getRunnerLevel, LEVEL_DEFS } from '@/lib/badges';
 import type { LeaderboardEntry, Run } from '@/types';
 
 interface LeaderboardProps {
   runs: Run[];
 }
+
+const NEON_COLORS: Record<string, { glow: string; border: string; bg: string }> = {
+  orange: { glow: 'rgba(249,115,22,0.4)', border: 'rgba(249,115,22,0.4)', bg: 'rgba(249,115,22,0.08)' },
+  blue: { glow: 'rgba(59,130,246,0.4)', border: 'rgba(59,130,246,0.4)', bg: 'rgba(59,130,246,0.08)' },
+  green: { glow: 'rgba(34,197,94,0.4)', border: 'rgba(34,197,94,0.4)', bg: 'rgba(34,197,94,0.08)' },
+  yellow: { glow: 'rgba(234,179,8,0.4)', border: 'rgba(234,179,8,0.4)', bg: 'rgba(234,179,8,0.08)' },
+  red: { glow: 'rgba(239,68,68,0.4)', border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.08)' },
+};
 
 export default function Leaderboard({ runs }: LeaderboardProps) {
   const { lang, t } = useLanguage();
@@ -41,6 +49,8 @@ export default function Leaderboard({ runs }: LeaderboardProps) {
   }, [period]);
 
   const unlockedBadges = useMemo(() => getUnlockedBadges(runs), [runs]);
+  const totalKm = useMemo(() => runs.reduce((sum, r) => sum + r.distance_km, 0), [runs]);
+  const level = useMemo(() => getRunnerLevel(totalKm), [totalKm]);
 
   async function handleSaveProfile() {
     setSavingProfile(true);
@@ -71,7 +81,7 @@ export default function Leaderboard({ runs }: LeaderboardProps) {
         <p className="mt-1 text-sm text-neutral-400">{t('lb.subtitle')}</p>
       </div>
 
-      {/* Profile card */}
+      {/* Profile card with level bar */}
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
         {editingProfile ? (
           <div className="space-y-4">
@@ -122,28 +132,66 @@ export default function Leaderboard({ runs }: LeaderboardProps) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-2xl">
-                {avatar}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-2xl">
+                  {avatar}
+                </div>
+                <div>
+                  <p className="font-semibold text-white">{profileName}</p>
+                  <p className="text-sm text-neutral-400">
+                    {unlockedBadges.size} {t('lb.badgesUnlocked')} / {BADGE_DEFS.length}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-white">{profileName}</p>
-                <p className="text-sm text-neutral-400">
-                  {unlockedBadges.size} {t('lb.badgesUnlocked')} / {BADGE_DEFS.length}
-                </p>
+              <button
+                onClick={() => {
+                  setNameInput(profileName);
+                  setAvatarInput(avatar);
+                  setEditingProfile(true);
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-300 transition-colors hover:bg-neutral-800"
+              >
+                <Edit2 className="h-3.5 w-3.5" /> {t('dash.setGoal')}
+              </button>
+            </div>
+
+            {/* Level progress bar */}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star
+                    className="h-4 w-4"
+                    style={{ color: level.color }}
+                    fill={level.color}
+                  />
+                  <span className="text-sm font-medium" style={{ color: level.color }}>
+                    {t('lvl.level')} {level.level} — {lang === 'vi' ? level.title_vi : level.title_en}
+                  </span>
+                </div>
+                <span className="text-xs text-neutral-500">
+                  {level.kmToNext > 0
+                    ? `${level.kmToNext.toFixed(1)} ${t('lvl.kmToNext')}`
+                    : t('lvl.maxLevel')}
+                </span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-neutral-800">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${level.progressPct}%`,
+                    background: `linear-gradient(90deg, ${level.color}80, ${level.color})`,
+                    boxShadow: `0 0 10px ${level.color}60`,
+                  }}
+                />
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-neutral-600">
+                <span>Lv.{level.level}</span>
+                <span>{totalKm.toFixed(1)} km</span>
+                <span>Lv.{Math.min(level.level + 1, LEVEL_DEFS.length)}</span>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setNameInput(profileName);
-                setAvatarInput(avatar);
-                setEditingProfile(true);
-              }}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-300 transition-colors hover:bg-neutral-800"
-            >
-              <Edit2 className="h-3.5 w-3.5" /> {t('dash.setGoal')}
-            </button>
           </div>
         )}
       </div>
@@ -218,33 +266,50 @@ export default function Leaderboard({ runs }: LeaderboardProps) {
         )}
       </div>
 
-      {/* Badges grid */}
+      {/* Neon glassmorphism badges grid */}
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
         <div className="mb-4 flex items-center gap-2">
           <Medal className="h-5 w-5 text-orange-400" />
           <h3 className="text-lg font-semibold text-white">{t('lb.badges')}</h3>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {BADGE_DEFS.map((badge) => {
             const isUnlocked = unlockedBadges.has(badge.id);
+            const neon = NEON_COLORS[badge.color] ?? NEON_COLORS.orange;
             return (
               <div
                 key={badge.id}
-                className={`flex flex-col items-center rounded-xl border p-4 text-center transition-all ${
-                  isUnlocked
-                    ? 'border-orange-500/30 bg-orange-500/5 hover:scale-105'
-                    : 'border-neutral-800 bg-neutral-800/20 opacity-50'
+                className={`relative flex flex-col items-center rounded-xl border p-4 text-center transition-all duration-300 ${
+                  isUnlocked ? 'hover:scale-105' : 'opacity-40'
                 }`}
+                style={{
+                  borderColor: isUnlocked ? neon.border : 'rgba(64,64,64,0.4)',
+                  background: isUnlocked
+                    ? `linear-gradient(135deg, ${neon.bg}, rgba(255,255,255,0.02))`
+                    : 'rgba(38,38,38,0.2)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: isUnlocked ? `0 0 20px ${neon.glow}, inset 0 0 20px rgba(255,255,255,0.03)` : 'none',
+                }}
               >
-                <div className={`mb-2 text-3xl ${isUnlocked ? '' : 'grayscale'}`}>{badge.icon}</div>
-                <p className="text-xs font-semibold text-white">
+                {isUnlocked && (
+                  <div
+                    className="absolute inset-0 rounded-xl opacity-20"
+                    style={{
+                      background: `radial-gradient(circle at 50% 0%, ${neon.glow}, transparent 70%)`,
+                    }}
+                  />
+                )}
+                <div className={`relative mb-2 text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
+                  {badge.icon}
+                </div>
+                <p className="relative text-xs font-semibold text-white">
                   {lang === 'vi' ? badge.name_vi : badge.name_en}
                 </p>
-                <p className="mt-1 text-[10px] leading-tight text-neutral-500">
+                <p className="relative mt-1 text-[10px] leading-tight text-neutral-500">
                   {lang === 'vi' ? badge.desc_vi : badge.desc_en}
                 </p>
                 {!isUnlocked && (
-                  <p className="mt-2 text-[10px] text-neutral-600">{t('lb.badgesLocked')}</p>
+                  <p className="relative mt-2 text-[10px] text-neutral-600">{t('lb.badgesLocked')}</p>
                 )}
               </div>
             );

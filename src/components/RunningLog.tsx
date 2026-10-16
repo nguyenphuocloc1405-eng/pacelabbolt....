@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Plus, Trash2, MapPin, Timer, TrendingUp, Calendar, X, Activity, Download, Footprints, Tag, Map as MapIcon } from 'lucide-react';
-import type { Run, RunInput, Shoe, WorkoutType } from '@/types';
+import { Plus, Trash2, MapPin, Timer, TrendingUp, Calendar, X, Activity, Download, Footprints, Tag, Map as MapIcon, Upload, Mountain } from 'lucide-react';
+import type { Run, RunInput, Shoe, WorkoutType, GPXResult } from '@/types';
 import { calcCalories, formatDate, formatDuration, formatPace } from '@/lib/format';
 import { useLanguage } from '@/lib/i18n';
 import RunMap from '@/components/RunMap';
+import GPXUploader from '@/components/GPXUploader';
 
 const WORKOUT_TYPES: WorkoutType[] = ['Easy', 'Tempo', 'Interval', 'Long Run', 'Fartlek', 'Hill Repeats'];
 
@@ -27,9 +28,11 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
   const { lang, t, td } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showGpx, setShowGpx] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
+  const [gpxResult, setGpxResult] = useState<GPXResult | null>(null);
 
   const sortedRuns = [...runs].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -94,6 +97,17 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
           {sortedRuns.length > 0 && (
             <>
               <button
+                onClick={() => setShowGpx((v) => !v)}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-medium transition-colors ${
+                  showGpx
+                    ? 'border-green-500/50 bg-green-500/10 text-green-400'
+                    : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                <Upload className="h-5 w-5" />
+                <span className="hidden sm:inline">GPX</span>
+              </button>
+              <button
                 onClick={() => setShowMap((v) => !v)}
                 className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-medium transition-colors ${
                   showMap
@@ -129,6 +143,22 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
         </div>
       )}
 
+      {showGpx && (
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
+          <div className="mb-3 flex items-center gap-2">
+            <Upload className="h-5 w-5 text-green-400" />
+            <h3 className="text-lg font-semibold text-white">{t('map.gpxUpload')}</h3>
+          </div>
+          <GPXUploader
+            onImport={(result) => {
+              setGpxResult(result);
+              setRoutePoints(result.points);
+              setShowMap(true);
+            }}
+          />
+        </div>
+      )}
+
       {showMap && (
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 backdrop-blur">
           <div className="mb-3 flex items-center gap-2">
@@ -140,6 +170,30 @@ export default function RunningLog({ runs, shoes, onAddRun, onDeleteRun }: Runni
             onPointsChange={setRoutePoints}
             interactive
           />
+          {gpxResult && (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+                <MapPin className="mx-auto mb-1 h-4 w-4 text-orange-400" />
+                <p className="text-xs text-neutral-500">{t('log.distance')}</p>
+                <p className="font-bold text-white">{gpxResult.distanceKm.toFixed(2)} km</p>
+              </div>
+              <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+                <Timer className="mx-auto mb-1 h-4 w-4 text-blue-400" />
+                <p className="text-xs text-neutral-500">{t('log.time')}</p>
+                <p className="font-bold text-white">{formatDuration(gpxResult.durationMin, lang)}</p>
+              </div>
+              <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+                <TrendingUp className="mx-auto mb-1 h-4 w-4 text-green-400" />
+                <p className="text-xs text-neutral-500">{t('log.pace')}</p>
+                <p className="font-bold text-white">{formatPace(gpxResult.avgPaceSecPerKm)}/km</p>
+              </div>
+              <div className="rounded-lg bg-neutral-800/50 p-3 text-center">
+                <Mountain className="mx-auto mb-1 h-4 w-4 text-yellow-400" />
+                <p className="text-xs text-neutral-500">{t('map.elevation')}</p>
+                <p className="font-bold text-white">{gpxResult.elevationGain.toFixed(0)} m</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

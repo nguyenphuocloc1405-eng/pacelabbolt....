@@ -4,8 +4,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/pacelab/',
   plugins: [react()],
+  build: {
+    outDir: 'dist',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
